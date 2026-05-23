@@ -59,7 +59,8 @@ export const loginUser = async (
   }
 
   const token = generateToken(
-    existingUser.id
+    existingUser.id,
+    existingUser.role
   );
 
   return {
