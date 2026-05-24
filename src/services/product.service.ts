@@ -1,44 +1,180 @@
 import prisma from "../config/prisma";
 
-import { CreateProductDto } from "../validators/product.validator";
+import slugify from "slugify";
 
-import { getCache, setCache } from "../utils/cache";
+import { CreateProductDto, UpdateProductDto } from "../validators/product.validator";
 
-export const createProduct = async (
-  data: CreateProductDto
-) => {
-  const existingProduct =
-    await prisma.product.findUnique({
-      where: {
-        slug: data.slug
+import { getCache, setCache, deleteCache } from "../utils/cache";
+
+export const createProduct =
+  async (
+    data: CreateProductDto
+  ) => {
+
+    const slug =
+      slugify(
+        data.name,
+        {
+          lower: true,
+          strict: true
+        }
+      );
+
+    const existingProduct =
+      await prisma.product.findUnique({
+        where: {
+          slug
+        }
+      });
+
+    if (existingProduct) {
+      throw new Error(
+        "Product already exists"
+      );
+    }
+
+    const category =
+      await prisma.category.findUnique({
+        where: {
+          id: data.categoryId
+        }
+      });
+
+    if (!category) {
+      throw new Error(
+        "Category not found"
+      );
+    }
+
+    const product =
+      await prisma.product.create({
+        data: {
+          ...data,
+          slug
+        }
+      });
+
+    return product;
+};
+
+export const updateProduct =
+  async (
+    productId: string,
+    data: UpdateProductDto
+  ) => {
+
+    const existingProduct =
+      await prisma.product.findUnique({
+        where: {
+          id: productId
+        }
+      });
+
+    if (!existingProduct) {
+      throw new Error(
+        "Product not found"
+      );
+    }
+
+    let slug =
+      existingProduct.slug;
+
+    if (data.name) {
+
+      slug =
+        slugify(
+          data.name,
+          {
+            lower: true,
+            strict: true
+          }
+        );
+    }
+
+    if (data.categoryId) {
+
+      const category =
+        await prisma.category.findUnique({
+          where: {
+            id: data.categoryId
+          }
+        });
+
+      if (!category) {
+        throw new Error(
+          "Category not found"
+        );
       }
-    });
+    }
 
-  if (existingProduct) {
-    throw new Error(
-      "Product slug already exists"
+    const updatedProduct =
+      await prisma.product.update({
+        where: {
+          id: productId
+        },
+
+        data: {
+          ...data,
+          slug
+        }
+      });
+
+    await deleteCache(
+      `product:${existingProduct.slug}`
     );
-  }
 
-  const category =
-    await prisma.category.findUnique({
-      where: {
-        id: data.categoryId
-      }
-    });
+    if (
+      existingProduct.slug !== slug
+    ) {
 
-  if (!category) {
-    throw new Error(
-      "Category not found"
+      await deleteCache(
+        `product:${slug}`
+      );
+    }
+
+    return updatedProduct;
+};
+
+export const deleteProduct =
+  async (
+    productId: string
+  ) => {
+
+    const existingProduct =
+      await prisma.product.findUnique({
+        where: {
+          id: productId
+        }
+      });
+
+    if (!existingProduct) {
+      throw new Error(
+        "Product not found"
+      );
+    }
+
+    if (existingProduct.isDeleted) {
+      throw new Error(
+        "Product already deleted"
+      );
+    }
+
+    const deletedProduct =
+      await prisma.product.update({
+        where: {
+          id: productId
+        },
+
+        data: {
+          isDeleted: true
+        }
+      });
+
+    await deleteCache(
+      `product:${existingProduct.slug}`
     );
-  }
 
-  const product =
-    await prisma.product.create({
-      data
-    });
-
-  return product;
+    return deletedProduct;
 };
 
 interface GetProductsQuery {

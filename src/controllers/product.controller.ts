@@ -4,19 +4,24 @@ import {
 } from "express";
 
 import {
-  createProductSchema
+  createProductSchema,
+  updateProductSchema
 } from "../validators/product.validator";
 
 import {
   createProduct,
   getProducts, 
-  getProductBySlug
+  getProductBySlug,
+  updateProduct,
+  deleteProduct
 } from "../services/product.service";
 
-
+import {
+  AuthRequest
+} from "../middleware/auth.middleware";
 
 export const create = async (
-  req: Request,
+  req: AuthRequest,
   res: Response
 ) => {
   const validatedResult =
@@ -52,6 +57,83 @@ export const create = async (
           ? error.message
           : "Something went wrong"
     });
+  }
+};
+
+export const update = async (
+  req: AuthRequest,
+  res: Response
+) => {
+
+  const validatedResult =
+    updateProductSchema.safeParse(
+      req.body
+    );
+
+  if (!validatedResult.success) {
+    return res.status(400).json({
+      success: false,
+
+      errors:
+        validatedResult.error.flatten()
+    });
+  }
+
+  try {
+
+    const product =
+      await updateProduct(
+        req.params.id as string,
+        validatedResult.data
+      );
+
+    return res.json({
+      success: true,
+      data: product
+    });
+
+  } catch (error) {
+
+    return res.status(400).json({
+      success: false,
+
+      message:
+        error instanceof Error
+          ? error.message
+          : "Something went wrong"
+    });
+
+  }
+};
+
+export const remove = async (
+  req: AuthRequest,
+  res: Response
+) => {
+
+  try {
+
+    const product =
+      await deleteProduct(
+        req.params.id as string
+      );
+
+    return res.json({
+      success: true,
+      data: product
+    });
+
+  } catch (error) {
+
+    return res.status(400).json({
+      success: false,
+
+      message:
+        error instanceof Error
+          ? error.message
+          : "Something went wrong"
+    });
+
   }
 };
 

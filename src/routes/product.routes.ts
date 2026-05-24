@@ -3,7 +3,9 @@ import { Router } from "express";
 import {
   create,
   getAll,
-  getOne
+  getOne,
+  update,
+  remove
 } from "../controllers/product.controller";
 
 import {
@@ -25,6 +27,20 @@ r.post(
   authMiddleware,
   adminMiddleware,
   create
+);
+
+r.put(
+  "/:id",
+  authMiddleware,
+  adminMiddleware,
+  update
+);
+
+r.delete(
+  "/:id",
+  authMiddleware,
+  adminMiddleware,
+  remove
 );
 
 export default r;
