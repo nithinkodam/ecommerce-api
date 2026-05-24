@@ -1,17 +1,29 @@
 import IORedis from "ioredis";
 
-const redis = new IORedis({
-  host:
-    process.env.UPSTASH_REDIS_HOST,
+const redis = new IORedis(
+  process.env.REDIS_URL!,
+  {
+    maxRetriesPerRequest: null
+  }
+);
 
-  port: Number(
-    process.env.UPSTASH_REDIS_PORT
-  ),
+redis.on(
+  "connect",
+  () => {
+    console.log(
+      "Redis connected"
+    );
+  }
+);
 
-  password:
-    process.env.UPSTASH_REDIS_PASSWORD,
-
-  maxRetriesPerRequest: null
-});
+redis.on(
+  "error",
+  (err) => {
+    console.log(
+      "Redis error:",
+      err
+    );
+  }
+);
 
 export default redis;

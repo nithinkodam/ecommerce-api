@@ -1,5 +1,7 @@
 import prisma from "../config/prisma";
 
+import {  orderQueue } from "../queues/order.queue";
+
 export const checkout = async (
   userId: string
 ) => {
@@ -108,6 +110,29 @@ export const checkout = async (
         return order;
       }
     );
+
+  await orderQueue.add(
+    "send-order-email",
+
+    {
+      orderId: result.id,
+      userId
+    },
+
+    {
+      attempts: 3,
+
+      backoff: {
+        type: "exponential",
+
+        delay: 3000
+      },
+
+      removeOnComplete: true,
+
+      removeOnFail: false
+    }
+  );
 
   return result;
 };
