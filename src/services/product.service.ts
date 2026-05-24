@@ -2,6 +2,8 @@ import prisma from "../config/prisma";
 
 import { CreateProductDto } from "../validators/product.validator";
 
+import { getCache, setCache } from "../utils/cache";
+
 export const createProduct = async (
   data: CreateProductDto
 ) => {
@@ -138,41 +140,66 @@ export const getProducts = async (
   };
 };
 
-export const getProductBySlug = async (
-  slug: string
-) => {
-  const product =
-    await prisma.product.findFirst({
-      where: {
-        slug,
-        isDeleted: false
-      },
+export const getProductBySlug =
+  async (slug: string) => {
 
-      include: {
-        category: true,
+    const cacheKey =
+      `product:${slug}`;
 
-        reviews: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true
+    const cachedProduct =
+      await getCache(cacheKey);
+
+    if (cachedProduct) {
+
+      console.log(
+        "Cache HIT"
+      );
+
+      return cachedProduct;
+    }
+
+    console.log(
+      "Cache MISS"
+    );
+
+    const product =
+      await prisma.product.findFirst({
+        where: {
+          slug,
+          isDeleted: false
+        },
+
+        include: {
+          category: true,
+
+          reviews: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true
+                }
               }
-            }
-          },
+            },
 
-          orderBy: {
-            createdAt: "desc"
+            orderBy: {
+              createdAt: "desc"
+            }
           }
         }
-      }
-    });
+      });
 
-  if (!product) {
-    throw new Error(
-      "Product not found"
+    if (!product) {
+      throw new Error(
+        "Product not found"
+      );
+    }
+
+    await setCache(
+      cacheKey,
+      product,
+      60
     );
-  }
 
-  return product;
+    return product;
 };
