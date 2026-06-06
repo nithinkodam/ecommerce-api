@@ -1,5 +1,13 @@
 import prisma from "../config/prisma";
 
+import {
+  OrderStatus
+} from "@prisma/client";
+
+import {
+  canMove
+} from "../utils/orderTransitions";
+
 import {  orderQueue } from "../queues/order.queue";
 
 export const checkout = async (
@@ -61,7 +69,7 @@ export const checkout = async (
               totalPrice,
 
               status:
-                "CONFIRMED",
+                "PENDING",
 
               paymentStatus:
                 "PAID"
@@ -136,3 +144,111 @@ export const checkout = async (
 
   return result;
 };
+
+export const updateOrderStatus =
+  async (
+    orderId: string,
+    status: OrderStatus
+  ) => {
+
+    const order =
+      await prisma.order.findUnique({
+        where: {
+          id: orderId
+        },
+
+        include: {
+          items: true,
+          user: true
+        }
+      });
+
+    if (!order) {
+      throw new Error(
+        "Order not found"
+      );
+    }
+
+    if (
+      !canMove(
+        order.status,
+        status
+      )
+    ) {
+      throw new Error(
+        "Invalid status transition"
+      );
+    }
+
+    const result =
+     await prisma.$transaction(
+      async (tx) => {
+
+        if (
+          status ===
+          OrderStatus.CANCELLED
+        ) {
+
+          for (
+            const item
+            of order.items
+          ) {
+
+            await tx.product.update({
+              where: {
+                id: item.productId
+              },
+
+              data: {
+                stock: {
+                  increment:
+                    item.quantity
+                }
+              }
+            });
+
+          }
+
+        }
+
+        const updatedOrder =
+          await tx.order.update({
+            where: {
+              id: orderId
+            },
+
+            data: {
+              status
+            }
+          });
+
+        
+        return updatedOrder;
+      }
+    );
+
+    await orderQueue.add(
+      "order-status-email",
+
+      {
+        orderId: order.id,
+        userId: order.userId,
+        status
+      },
+      {
+        attempts: 3,
+
+        backoff: {
+          type: "exponential",
+
+          delay: 3000
+        },
+
+        removeOnComplete: true,
+
+        removeOnFail: false
+      }
+    );
+
+    return result;
+  };

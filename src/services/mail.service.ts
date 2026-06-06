@@ -38,7 +38,49 @@ export const sendOrderEmail =
       });
 
 
-    // console.log(response);
+    console.log(response);
+
+    return response;
+};
+
+export const sendOrderStatusEmail =
+  async (
+    to: string,
+    orderId: string,
+    status: string
+  ) => {
+
+    const response =
+      await resend.emails.send({
+
+        from:
+          "onboarding@resend.dev",
+
+        to,
+
+        subject:
+          "Order Status Updated",
+
+        html: `
+          <h1>Order Status Updated</h1>
+
+          <p>
+            Your order status has been updated.
+          </p>
+
+          <p>
+            Order ID:
+            ${orderId}
+          </p>
+
+          <p>
+            New Status:
+            <b>${status}</b>
+          </p>
+        `
+      });
+
+    console.log(response);
 
     return response;
 };

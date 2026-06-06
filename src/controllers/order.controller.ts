@@ -3,11 +3,20 @@ import {
 } from "express";
 
 import {
+  updateOrderStatusSchema
+} from "../validators/order.validator";
+
+import {
+  OrderStatus
+} from "@prisma/client";
+
+import {
   AuthRequest
 } from "../middleware/auth.middleware";
 
 import {
-  checkout
+  checkout,
+  updateOrderStatus
 } from "../services/order.service";
 
 export const checkoutOrder =
@@ -43,3 +52,42 @@ export const checkoutOrder =
 
     }
 };
+
+export const updateStatus =
+  async (
+    req: AuthRequest,
+    res: Response
+  ) => {
+
+    try {
+
+      const { status } =
+        updateOrderStatusSchema.parse(
+          req.body
+        );
+
+      const order =
+        await updateOrderStatus(
+          req.params.id as string,
+          status as OrderStatus
+        );
+
+      return res.json({
+        success: true,
+        data: order
+      });
+
+    } catch (error) {
+
+      return res.status(400).json({
+        success: false,
+
+        message:
+          error instanceof Error
+            ? error.message
+            : "Something went wrong"
+      });
+
+    }
+
+  };

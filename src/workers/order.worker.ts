@@ -4,7 +4,7 @@ dotenv.config();
 
 import prisma from "../config/prisma";
 
-import { sendOrderEmail } from "../services/mail.service";
+import { sendOrderEmail, sendOrderStatusEmail } from "../services/mail.service";
 
 import { Worker } from "bullmq";
 
@@ -37,10 +37,24 @@ const worker = new Worker(
         );
     }
 
-    await sendOrderEmail(
+    if (
+      job.name === "send-order-email"
+    ) {
+      await sendOrderEmail(
         user.email,
         job.data.orderId
-    );
+      );
+    }
+
+    if (
+      job.name === "order-status-email"
+    ) {
+      await sendOrderStatusEmail(
+        user.email,
+        job.data.orderId,
+        job.data.status
+      );
+    }
 
     console.log(
         `Email sent to ${user.email}`
