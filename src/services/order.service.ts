@@ -252,3 +252,52 @@ export const updateOrderStatus =
 
     return result;
   };
+
+  export const getMyOrders = async (
+  userId: string
+) => {
+
+  const orders =
+    await prisma.order.findMany({
+      where: {
+        userId
+      },
+
+      orderBy: {
+        createdAt: "desc"
+      }
+    });
+
+  return orders;
+};
+
+export const getOrderById =
+  async (
+    orderId: string,
+    userId: string
+  ) => {
+
+    const order =
+      await prisma.order.findFirst({
+        where: {
+          id: orderId,
+          userId
+        },
+
+        include: {
+          items: {
+            include: {
+              product: true
+            }
+          }
+        }
+      });
+
+    if (!order) {
+      throw new Error(
+        "Order not found"
+      );
+    }
+
+    return order;
+};

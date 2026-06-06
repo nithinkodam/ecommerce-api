@@ -16,7 +16,9 @@ import {
 
 import {
   checkout,
-  updateOrderStatus
+  updateOrderStatus,
+  getMyOrders,
+  getOrderById
 } from "../services/order.service";
 
 export const checkoutOrder =
@@ -90,4 +92,39 @@ export const updateStatus =
 
     }
 
+  };
+
+  export const getOrders =
+  async (
+    req: AuthRequest,
+    res: Response
+  ) => {
+
+    const orders =
+      await getMyOrders(
+        req.userId!
+      );
+
+    res.json({
+      success: true,
+      data: orders
+    });
+  };
+
+  export const getOrder =
+  async (
+    req: AuthRequest,
+    res: Response
+  ) => {
+
+    const order =
+      await getOrderById(
+        req.params.id as string,
+        req.userId!
+      );
+
+    res.json({
+      success: true,
+      data: order
+    });
   };

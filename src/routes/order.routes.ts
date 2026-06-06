@@ -2,7 +2,9 @@ import { Router } from "express";
 
 import {
   checkoutOrder,
-  updateStatus
+  updateStatus,
+  getOrders,
+  getOrder
 } from "../controllers/order.controller";
 
 import {
@@ -21,11 +23,22 @@ r.post(
   checkoutOrder
 );
 
+r.get(
+  "/",
+  authMiddleware,
+  getOrders
+);
+
+r.get(
+  "/:id",
+  authMiddleware,
+  getOrder
+);
+
 r.patch(
   "/:id/status",
   authMiddleware,
   adminMiddleware,
   updateStatus
 );
-
 export default r;
