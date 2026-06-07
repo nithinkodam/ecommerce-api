@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 
 import { registerSchema, loginSchema } from "../validators/auth.validator";
 
-import { registerUser, loginUser } from "../services/auth.service"
+import { registerUser, loginUser, getCurrentUser } from "../services/auth.service"
 
 import { AuthRequest } from "../middleware/auth.middleware";
 
@@ -81,12 +81,28 @@ export const login = async (
   }
 };
 
+
 export const me = async (
   req: AuthRequest,
   res: Response
 ) => {
-  return res.json({
-    message: "Protected route working",
-    userId: req.userId
-  });
+
+  try {
+
+    const user =
+      await getCurrentUser(
+        req.userId!
+      );
+
+    return res.json(user);
+
+  } catch {
+
+    return res.status(500).json({
+      message:
+        "Something went wrong"
+    });
+
+  }
+
 };

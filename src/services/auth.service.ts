@@ -68,7 +68,30 @@ export const loginUser = async (
     user: {
       id: existingUser.id,
       name: existingUser.name,
-      email: existingUser.email
+      email: existingUser.email,
+      role: existingUser.role
     }
   };
 };
+
+export const getCurrentUser =
+  async (
+    userId: string
+  ) => {
+
+    const user =
+      await prisma.user.findUnique({
+        where: {
+          id: userId
+        },
+
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true
+        }
+      });
+
+    return user;
+  };
