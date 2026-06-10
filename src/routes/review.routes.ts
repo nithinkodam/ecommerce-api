@@ -11,29 +11,31 @@ import {
   authMiddleware
 } from "../middleware/auth.middleware";
 
-const r = Router();
+export const productReviewRoutes =
+  Router();
 
-r.get(
+export const reviewRoutes =
+  Router();
+
+productReviewRoutes.get(
   "/:slug/reviews",
   getAll
 );
 
-r.post(
+productReviewRoutes.post(
   "/:slug/reviews",
   authMiddleware,
   create
 );
 
-r.put(
+reviewRoutes.put(
   "/:id",
   authMiddleware,
   update
 );
 
-r.delete(
+reviewRoutes.delete(
   "/:id",
   authMiddleware,
   remove
 );
-
-export default r;

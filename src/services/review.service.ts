@@ -1,4 +1,5 @@
 import prisma from "../config/prisma";
+import { deleteCache } from "../utils/cache";
 
 import {
   CreateReviewDto,
@@ -111,6 +112,10 @@ export const createReview = async (
             aggregates._count
         };
       }
+    );
+
+    await deleteCache(
+      `product:${slug}`
     );
 
   return result;
@@ -231,6 +236,19 @@ export const updateReview =
         }
       );
 
+      const product =
+        await prisma.product.findUnique({
+          where: {
+            id: review.productId
+          }
+        });
+      
+      if (product) {
+        await deleteCache(
+          `product:${product.slug}`
+        );
+      }
+
     return result;
 };
 
@@ -309,6 +327,19 @@ export const deleteReview =
           };
         }
       );
+
+    const product =
+        await prisma.product.findUnique({
+          where: {
+            id: review.productId
+          }
+        });
+      
+      if (product) {
+        await deleteCache(
+          `product:${product.slug}`
+        );
+      }
 
     return result;
 };
